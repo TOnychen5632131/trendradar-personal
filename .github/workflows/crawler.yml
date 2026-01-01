@@ -152,7 +152,8 @@ jobs:
           BARK_URL: ${{ secrets.BARK_URL }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       
-          # 👇 关键：使用 TrendRadar 实际读取的 S3 变量名
+          # 👇 关键三件套
+          STORAGE_BACKEND: remote
           S3_BUCKET: ${{ secrets.S3_BUCKET }}
           S3_ACCESS_KEY: ${{ secrets.S3_ACCESS_KEY }}
           S3_SECRET_KEY: ${{ secrets.S3_SECRET_KEY }}
