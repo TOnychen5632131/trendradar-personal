@@ -25,6 +25,7 @@ def load_frequency_words(
     - 每个词组由空行分隔
     - [GLOBAL_FILTER] 区域定义全局过滤词
     - [WORD_GROUPS] 区域定义词组（默认）
+    - 词组首行可用 # 标题，作为该组展示名称
 
     词组语法：
     - 普通词：直接写入，任意匹配即可
@@ -82,12 +83,19 @@ def load_frequency_words(
                 # 忽略特殊语法前缀，只提取纯文本
                 if line.startswith(("!", "+", "@")):
                     continue  # 全局过滤区不支持特殊语法
+                if line.startswith("#"):
+                    continue
                 if line:
                     global_filters.append(line)
             continue
 
         # 处理词组区域
-        words = lines
+        group_title = None
+        if lines and lines[0].startswith("#"):
+            group_title = lines[0].lstrip("#").strip()
+            lines = lines[1:]
+
+        words = [line for line in lines if not line.startswith("#")]
 
         group_required_words = []
         group_normal_words = []
@@ -112,7 +120,9 @@ def load_frequency_words(
                 group_normal_words.append(word)
 
         if group_required_words or group_normal_words:
-            if group_normal_words:
+            if group_title:
+                group_key = group_title
+            elif group_normal_words:
                 group_key = " ".join(group_normal_words)
             else:
                 group_key = " ".join(group_required_words)

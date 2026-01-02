@@ -1,9 +1,37 @@
 # 组1：公司本体
 xhxhstudio
-"xhxh studio"
+
+# 组1：公司本体
 xhxh studio
 
 # 组2：事件信号词（发生了什么）
++xhxhstudio
+announcement
+announced
+launch
+released
+release
+update
+v2
+version
+roadmap
+partnership
+collaboration
+hiring
+recruit
+job
+layoff
+funding
+investment
+acquired
+acquisition
+lawsuit
+controversy
+apology
+statement
+
+# 组2：事件信号词（发生了什么）
++xhxh studio
 announcement
 announced
 launch
@@ -29,6 +57,29 @@ apology
 statement
 
 # 组3：关联人信号词（谁和它有关系）
++xhxhstudio
+founder
+co-founder
+ceo
+cto
+owner
+team
+member
+designer
+artist
+producer
+director
+maintainer
+contributor
+speaker
+interview
+joined
+left
+ex-
+former
+
+# 组3：关联人信号词（谁和它有关系）
++xhxh studio
 founder
 co-founder
 ceo
