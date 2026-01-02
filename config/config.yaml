@@ -90,6 +90,61 @@ rss:
       url: "http://www.ruanyifeng.com/blog/atom.xml"
       # max_age_days: 7               # 示例：推送7天内的文章（更新较慢的博客）
 
+    # 关键词搜索（无需 API Key）
+    - id: "google-news-xhxh"
+      name: "Google News - xhxhstudio"
+      url: "https://news.google.com/rss/search?q=xhxhstudio%20OR%20%22xhxh%20studio%22&hl=en-US&gl=US&ceid=US:en"
+
+    - id: "bing-news-xhxh"
+      name: "Bing News - xhxhstudio"
+      url: "https://www.bing.com/news/search?q=xhxhstudio%20OR%20%22xhxh%20studio%22&format=rss&setmkt=en-US&setlang=en-US"
+
+    # US news sources (RSS)
+    - id: "reuters-top"
+      name: "Reuters - Top News"
+      url: "https://feeds.reuters.com/reuters/topNews"
+
+    - id: "ap-top"
+      name: "AP News - Top News"
+      url: "https://apnews.com/hub/ap-top-news?output=RSS"
+
+    - id: "npr-news"
+      name: "NPR - News"
+      url: "https://feeds.npr.org/1001/rss.xml"
+
+    - id: "nyt-home"
+      name: "NYTimes - Home Page"
+      url: "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"
+
+    - id: "usatoday-top"
+      name: "USA Today - Top Stories"
+      url: "https://rssfeeds.usatoday.com/usatoday-NewsTopStories"
+
+    - id: "cnn-us"
+      name: "CNN - US"
+      url: "https://rss.cnn.com/rss/cnn_us.rss"
+
+    - id: "cnbc-top"
+      name: "CNBC - Top News"
+      url: "https://www.cnbc.com/id/100003114/device/rss/rss.html"
+
+    # US tech sources (RSS)
+    - id: "techcrunch"
+      name: "TechCrunch"
+      url: "https://techcrunch.com/feed/"
+
+    - id: "theverge"
+      name: "The Verge"
+      url: "https://www.theverge.com/rss/index.xml"
+
+    - id: "arstechnica"
+      name: "Ars Technica"
+      url: "http://feeds.arstechnica.com/arstechnica/index"
+
+    - id: "wired"
+      name: "Wired"
+      url: "https://www.wired.com/feed/rss"
+
     # 自定义源示例
     # - id: "custom-feed"
     #   name: "自定义源"
