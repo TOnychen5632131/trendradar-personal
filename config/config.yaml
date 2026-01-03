@@ -97,7 +97,7 @@ rss:
 
     - id: "bing-news-xhxh"
       name: "Bing News - xhxhstudio"
-      url: "https://www.bing.com/news/search?q=xhxhstudio%20OR%20%22xhxh%20studio%22&format=rss&setmkt=en-US&setlang=en-US"
+      url: "https://www.bing.com/news/search?q=studio%20OR%20%22xhxh%20studio%22&format=rss&setmkt=en-US&setlang=en-US"
 
     # Brave Search API（需设置 GitHub Secrets: BRAVE_SEARCH_API_KEY）
     - id: "brave-news-xhxh"
