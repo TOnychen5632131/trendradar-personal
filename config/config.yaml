@@ -99,6 +99,17 @@ rss:
       name: "Bing News - xhxhstudio"
       url: "https://www.bing.com/news/search?q=xhxhstudio%20OR%20%22xhxh%20studio%22&format=rss&setmkt=en-US&setlang=en-US"
 
+    # Brave Search API（需设置 GitHub Secrets: BRAVE_SEARCH_API_KEY）
+    - id: "brave-news-xhxh"
+      name: "Brave News - xhxhstudio"
+      type: "brave_search"
+      url: "https://api.search.brave.com/res/v1/news/search"
+      query: 'xhxhstudio OR "xhxh studio"'
+      max_items: 20
+      params:
+        country: "US"
+        lang: "en"
+
     # US news sources (RSS)
     - id: "reuters-top"
       name: "Reuters - Top News"

@@ -5,11 +5,12 @@ RSS 抓取器
 负责从配置的 RSS 源抓取数据并转换为标准格式
 """
 
+import os
 import time
 import random
-from dataclasses import dataclass
-from datetime import datetime
-from typing import List, Dict, Optional, Tuple, Callable
+from dataclasses import dataclass, field
+from datetime import datetime, timezone as dt_timezone
+from typing import List, Dict, Optional, Tuple, Callable, Any
 
 import requests
 
@@ -27,6 +28,9 @@ class RSSFeedConfig:
     max_items: int = 0          # 最大条目数（0=不限制）
     enabled: bool = True        # 是否启用
     max_age_days: Optional[int] = None  # 文章最大年龄（天），覆盖全局设置；None=使用全局，0=禁用过滤
+    feed_type: str = "rss"      # 源类型：rss | brave_search
+    query: str = ""             # 搜索关键词（用于 Brave Search）
+    params: Dict[str, Any] = field(default_factory=dict)  # 额外请求参数（用于 Brave Search）
 
 
 class RSSFetcher:
@@ -127,6 +131,109 @@ class RSSFetcher:
         filtered_count = len(items) - len(filtered)
         return filtered, filtered_count
 
+    def _normalize_published_at(self, value: Any) -> str:
+        """将发布时间规范化为 ISO 字符串"""
+        if not value:
+            return ""
+
+        if isinstance(value, (int, float)):
+            timestamp = float(value)
+            if timestamp > 1_000_000_000_000:
+                timestamp = timestamp / 1000
+            try:
+                return datetime.fromtimestamp(timestamp, tz=dt_timezone.utc).isoformat()
+            except (ValueError, OSError):
+                return ""
+
+        if isinstance(value, str):
+            try:
+                return datetime.fromisoformat(value.replace("Z", "+00:00")).isoformat()
+            except ValueError:
+                return ""
+
+        return ""
+
+    def _fetch_brave_search(self, feed: RSSFeedConfig) -> Tuple[List[RSSItem], Optional[str]]:
+        """使用 Brave Search API 抓取新闻结果并转换为 RSSItem"""
+        api_key = os.environ.get("BRAVE_SEARCH_API_KEY", "").strip()
+        if not api_key:
+            error = "缺少环境变量 BRAVE_SEARCH_API_KEY"
+            print(f"[RSS] {feed.name}: {error}")
+            return [], error
+
+        query = (feed.query or "").strip()
+        if not query:
+            error = "Brave Search 缺少 query 参数"
+            print(f"[RSS] {feed.name}: {error}")
+            return [], error
+
+        params = {"q": query}
+        if feed.max_items > 0:
+            params["count"] = min(feed.max_items, 50)
+        for key, value in (feed.params or {}).items():
+            if value is None or value == "":
+                continue
+            if isinstance(value, bool):
+                value = "true" if value else "false"
+            params[key] = value
+
+        headers = dict(self.session.headers)
+        headers.update({
+            "Accept": "application/json",
+            "X-Subscription-Token": api_key,
+        })
+
+        response = self.session.get(feed.url, params=params, headers=headers, timeout=self.timeout)
+        response.raise_for_status()
+
+        data = response.json()
+        results = data.get("results", [])
+        if not isinstance(results, list):
+            results = []
+
+        now = get_configured_time(self.timezone)
+        crawl_time = now.strftime("%H:%M")
+        items = []
+
+        for result in results:
+            if not isinstance(result, dict):
+                continue
+            title = result.get("title") or result.get("name") or ""
+            title = title.strip()
+            if not title:
+                continue
+            url = result.get("url") or result.get("link") or ""
+            summary = result.get("description") or result.get("snippet") or ""
+            published_at = self._normalize_published_at(
+                result.get("published")
+                or result.get("published_at")
+                or result.get("date")
+            )
+            author = result.get("source")
+            if not author and isinstance(result.get("publisher"), dict):
+                author = result.get("publisher", {}).get("name", "")
+
+            item = RSSItem(
+                title=title,
+                feed_id=feed.id,
+                feed_name=feed.name,
+                url=url,
+                published_at=published_at,
+                summary=summary,
+                author=author or "",
+                crawl_time=crawl_time,
+                first_time=crawl_time,
+                last_time=crawl_time,
+                count=1,
+            )
+            items.append(item)
+
+        if feed.max_items > 0:
+            items = items[:feed.max_items]
+
+        print(f"[RSS] {feed.name}: 获取 {len(items)} 条")
+        return items, None
+
     def fetch_feed(self, feed: RSSFeedConfig) -> Tuple[List[RSSItem], Optional[str]]:
         """
         抓取单个 RSS 源
@@ -138,6 +245,14 @@ class RSSFetcher:
             (条目列表, 错误信息) 元组
         """
         try:
+            if feed.feed_type and feed.feed_type != "rss":
+                feed_type = feed.feed_type.lower()
+                if feed_type in ("brave_search", "brave"):
+                    return self._fetch_brave_search(feed)
+                error = f"不支持的 RSS feed 类型: {feed.feed_type}"
+                print(f"[RSS] {feed.name}: {error}")
+                return [], error
+
             response = self.session.get(feed.url, timeout=self.timeout)
             response.raise_for_status()
 
@@ -289,6 +404,9 @@ class RSSFetcher:
                 max_items=feed_config.get("max_items", 0),  # 0=不限制
                 enabled=feed_config.get("enabled", True),
                 max_age_days=max_age_days,  # None=使用全局，0=禁用，>0=覆盖
+                feed_type=feed_config.get("type", "rss"),
+                query=feed_config.get("query", ""),
+                params=feed_config.get("params", {}),
             )
             if feed.id and feed.url:
                 feeds.append(feed)

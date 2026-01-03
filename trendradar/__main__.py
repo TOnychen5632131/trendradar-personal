@@ -653,6 +653,9 @@ class NewsAnalyzer:
                     max_items=feed_config.get("max_items", 50),
                     enabled=feed_config.get("enabled", True),
                     max_age_days=max_age_days,  # None=使用全局，0=禁用，>0=覆盖
+                    feed_type=feed_config.get("type", "rss"),
+                    query=feed_config.get("query", ""),
+                    params=feed_config.get("params", {}),
                 )
                 if feed.id and feed.url and feed.enabled:
                     feeds.append(feed)
