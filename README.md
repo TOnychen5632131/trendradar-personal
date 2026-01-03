@@ -13,7 +13,7 @@
 [![GitHub Stars](https://img.shields.io/github/stars/sansan0/TrendRadar?style=flat-square&logo=github&color=yellow)](https://github.com/sansan0/TrendRadar/stargazers)
 [![GitHub Forks](https://img.shields.io/github/forks/sansan0/TrendRadar?style=flat-square&logo=github&color=blue)](https://github.com/sansan0/TrendRadar/network/members)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg?style=flat-square)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v4.5.0-blue.svg)](https://github.com/sansan0/TrendRadar)
+[![Version](https://img.shields.io/badge/version-v4.7.0-blue.svg)](https://github.com/sansan0/TrendRadar)
 [![MCP](https://img.shields.io/badge/MCP-v2.0.0-green.svg)](https://github.com/sansan0/TrendRadar)
 [![RSS](https://img.shields.io/badge/RSS-订阅源支持-orange.svg?style=flat-square&logo=rss&logoColor=white)](https://github.com/sansan0/TrendRadar)
 
@@ -184,6 +184,12 @@
 > **📌 查看最新更新**：**[原仓库更新日志](https://github.com/sansan0/TrendRadar?tab=readme-ov-file#-更新日志)** ：
 - **提示**：建议查看【历史更新】，明确具体的【功能内容】
 
+
+### 2026/01/03 - v4.7.0
+
+- **全量 RSS + Brave Search 推送**：`report.mode: daily` 且关闭 `freshness_filter`，每小时邮件都照搬 RSS/搜索结果（含重复和旧条目），保持榜单内容完整。
+- **关键词宽松匹配**：简化 `frequency_words.txt`，只以 “xhxh” 相关的公司、事件与人物关键词分组，避免因 `+` 之类限定错过任何信息。
+- **RSS 细节日志增强**：开启 `advanced.rss.verbose_log` 与示例输出，方便追踪 Brave Search 与每个 RSS 的抓取/解析情况。
 
 ### 2025/12/30 - v4.5.0
 

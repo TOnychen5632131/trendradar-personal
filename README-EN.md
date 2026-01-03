@@ -13,7 +13,7 @@
 [![GitHub Stars](https://img.shields.io/github/stars/sansan0/TrendRadar?style=flat-square&logo=github&color=yellow)](https://github.com/sansan0/TrendRadar/stargazers)
 [![GitHub Forks](https://img.shields.io/github/forks/sansan0/TrendRadar?style=flat-square&logo=github&color=blue)](https://github.com/sansan0/TrendRadar/network/members)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg?style=flat-square)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v4.5.0-blue.svg)](https://github.com/sansan0/TrendRadar)
+[![Version](https://img.shields.io/badge/version-v4.7.0-blue.svg)](https://github.com/sansan0/TrendRadar)
 [![MCP](https://img.shields.io/badge/MCP-v2.0.0-green.svg)](https://github.com/sansan0/TrendRadar)
 [![RSS](https://img.shields.io/badge/RSS-Feed_Support-orange.svg?style=flat-square&logo=rss&logoColor=white)](https://github.com/sansan0/TrendRadar)
 
@@ -134,6 +134,12 @@ After communication, the author indicated no concerns about server pressure, but
 
 >**📌 Check Latest Updates**: **[Original Repository Changelog](https://github.com/sansan0/TrendRadar?tab=readme-ov-file#-changelog)**:
 - **Tip**: Check [Changelog] to understand specific [Features]
+
+### 2026/01/03 - v4.7.0
+
+- **Daily RSS + Brave Search feed delivery**: `report.mode: daily` and freshness filtering disabled so every RSS/Brave result (including duplicates and older items) is delivered by email.
+- **Relaxed keyword matching**: `frequency_words.txt` now groups company, event, and people keywords without forced `+` constraints to avoid silently filtering relevant content.
+- **Verbose RSS diagnostics**: new verbose logging exposes Brave Search/RSS API parameters, responses, parsing stats, filters, and samples for easier troubleshooting.
 
 ### 2025/12/30 - v4.5.0
 
