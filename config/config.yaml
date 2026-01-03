@@ -101,14 +101,15 @@ rss:
 
     # Brave Search API（需设置 GitHub Secrets: BRAVE_SEARCH_API_KEY）
     - id: "brave-news-xhxh"
-      name: "Brave News - xhxhstudio"
+      name: "Brave Search - xhxhstudio"
       type: "brave_search"
-      url: "https://api.search.brave.com/res/v1/news/search"
-      query: 'xhxhstudio OR "xhxh studio"'
+      url: "https://api.search.brave.com/res/v1/web/search"
+      query: 'xhxhstudio OR "xhxh studio" OR "XHXH Studio" OR "XHXH Press-on" OR "XHXH press on" OR "xhxh nails" OR "xhxh press on"'
       max_items: 20
       params:
         country: "US"
-        lang: "en"
+        search_lang: "en"
+        safesearch: "moderate"
 
     # US news sources (RSS)
     - id: "reuters-top"

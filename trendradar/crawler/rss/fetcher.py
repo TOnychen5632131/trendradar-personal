@@ -187,7 +187,17 @@ class RSSFetcher:
         response.raise_for_status()
 
         data = response.json()
-        results = data.get("results", [])
+        if isinstance(data, dict) and data.get("error"):
+            error = f"Brave Search API 返回错误: {data.get('error')}"
+            print(f"[RSS] {feed.name}: {error}")
+            return [], error
+
+        results = data.get("results")
+        if not results:
+            if isinstance(data.get("web"), dict):
+                results = data.get("web", {}).get("results")
+            if not results and isinstance(data.get("news"), dict):
+                results = data.get("news", {}).get("results")
         if not isinstance(results, list):
             results = []
 
@@ -203,6 +213,8 @@ class RSSFetcher:
             if not title:
                 continue
             url = result.get("url") or result.get("link") or ""
+            if not url:
+                continue
             summary = result.get("description") or result.get("snippet") or ""
             published_at = self._normalize_published_at(
                 result.get("published")
@@ -212,6 +224,10 @@ class RSSFetcher:
             author = result.get("source")
             if not author and isinstance(result.get("publisher"), dict):
                 author = result.get("publisher", {}).get("name", "")
+            if not author and isinstance(result.get("profile"), dict):
+                author = result.get("profile", {}).get("name", "")
+            if not author and isinstance(result.get("meta_url"), dict):
+                author = result.get("meta_url", {}).get("hostname", "")
 
             item = RSSItem(
                 title=title,
