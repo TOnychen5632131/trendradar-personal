@@ -628,6 +628,16 @@ class NewsAnalyzer:
         try:
             from trendradar.crawler.rss import RSSFetcher, RSSFeedConfig
 
+            rss_config = self.ctx.rss_config
+            rss_verbose = bool(rss_config.get("VERBOSE_LOG", False))
+            raw_sample_size = rss_config.get("LOG_SAMPLE_SIZE", 5)
+            try:
+                log_sample_size = max(int(raw_sample_size), 0)
+            except (ValueError, TypeError):
+                log_sample_size = 0
+            if rss_verbose:
+                print(f"[RSS][调试] 启用 RSS 调试日志，样例条数: {log_sample_size}")
+
             # 构建 RSS 源配置
             feeds = []
             for feed_config in rss_feeds:
@@ -658,6 +668,24 @@ class NewsAnalyzer:
                     params=feed_config.get("params", {}),
                 )
                 if feed.id and feed.url and feed.enabled:
+                    if rss_verbose:
+                        url_text = feed.url
+                        if len(url_text) > 120:
+                            url_text = url_text[:117] + "..."
+                        query_text = (feed.query or "").strip()
+                        if query_text and len(query_text) > 120:
+                            query_text = query_text[:117] + "..."
+                        params_summary = {
+                            key: value
+                            for key, value in (feed.params or {}).items()
+                            if value not in (None, "")
+                        }
+                        print(
+                            "[RSS][调试] RSS 源配置: "
+                            f"id={feed.id} type={feed.feed_type or 'rss'} "
+                            f"max_items={feed.max_items} max_age_days={feed.max_age_days} "
+                            f"url={url_text} query={query_text or '-'} params={params_summary}"
+                        )
                     feeds.append(feed)
 
             if not feeds:
@@ -665,7 +693,6 @@ class NewsAnalyzer:
                 return None, None
 
             # 创建抓取器
-            rss_config = self.ctx.rss_config
             # RSS 代理：优先使用 RSS 专属代理，否则使用爬虫默认代理
             rss_proxy_url = rss_config.get("PROXY_URL", "") or self.proxy_url or ""
             # 获取配置的时区
@@ -684,6 +711,8 @@ class NewsAnalyzer:
                 timezone=timezone,
                 freshness_enabled=freshness_enabled,
                 default_max_age_days=default_max_age_days,
+                verbose=rss_verbose,
+                log_sample_size=log_sample_size,
             )
 
             # 抓取数据
@@ -867,6 +896,18 @@ class NewsAnalyzer:
         freshness_enabled = freshness_config.get("ENABLED", True)
         default_max_age_days = freshness_config.get("MAX_AGE_DAYS", 3)
         timezone = self.ctx.config.get("TIMEZONE", "Asia/Shanghai")
+        rss_verbose = bool(rss_config.get("VERBOSE_LOG", False))
+        raw_sample_size = rss_config.get("LOG_SAMPLE_SIZE", 5)
+        try:
+            log_sample_size = max(int(raw_sample_size), 0)
+        except (ValueError, TypeError):
+            log_sample_size = 0
+
+        def truncate_title(value: str, max_len: int = 80) -> str:
+            text = str(value or "")
+            if len(text) <= max_len:
+                return text
+            return text[: max_len - 3] + "..."
 
         # 构建 feed_id -> max_age_days 的映射
         feed_max_age_map = {}
@@ -884,12 +925,17 @@ class NewsAnalyzer:
             max_days = feed_max_age_map.get(feed_id)
             if max_days is None:
                 max_days = default_max_age_days
+            feed_filtered = 0
+            filtered_samples = []
 
             for item in items:
                 # 应用新鲜度过滤（仅在启用时）
                 if freshness_enabled and max_days > 0:
                     if item.published_at and not is_within_days(item.published_at, max_days, timezone):
                         filtered_count += 1
+                        feed_filtered += 1
+                        if rss_verbose and log_sample_size > 0 and len(filtered_samples) < log_sample_size:
+                            filtered_samples.append(truncate_title(item.title))
                         continue  # 跳过超过指定天数的文章
 
                 rss_items.append({
@@ -902,6 +948,15 @@ class NewsAnalyzer:
                     "author": item.author,
                 })
 
+            if rss_verbose:
+                kept_count = len(items) - feed_filtered
+                print(
+                    "[RSS][调试] 新鲜度过滤: "
+                    f"feed={feed_id} max_age_days={max_days} 输入={len(items)} 过滤={feed_filtered} 保留={kept_count}"
+                )
+                if filtered_samples:
+                    print(f"[RSS][调试] 新鲜度过滤示例 {feed_id}: " + " | ".join(filtered_samples))
+
         # 输出过滤统计
         if filtered_count > 0:
             print(f"[RSS] 新鲜度过滤：跳过 {filtered_count} 篇超过指定天数的旧文章（仍保留在数据库中）")
@@ -910,19 +965,49 @@ class NewsAnalyzer:
 
     def _filter_rss_by_keywords(self, rss_items: List[Dict]) -> List[Dict]:
         """使用 frequency_words.txt 过滤 RSS 条目"""
+        rss_config = self.ctx.rss_config
+        rss_verbose = bool(rss_config.get("VERBOSE_LOG", False))
+        raw_sample_size = rss_config.get("LOG_SAMPLE_SIZE", 5)
+        try:
+            log_sample_size = max(int(raw_sample_size), 0)
+        except (ValueError, TypeError):
+            log_sample_size = 0
+
+        def truncate_title(value: str, max_len: int = 80) -> str:
+            text = str(value or "")
+            if len(text) <= max_len:
+                return text
+            return text[: max_len - 3] + "..."
+
         try:
             word_groups, filter_words, global_filters = self.ctx.load_frequency_words()
             if word_groups or filter_words or global_filters:
                 from trendradar.core.frequency import matches_word_groups
                 filtered_items = []
+                matched_samples = []
+                unmatched_samples = []
+                if rss_verbose:
+                    print(
+                        "[RSS][调试] 关键词配置: "
+                        f"word_groups={len(word_groups)} filter_words={len(filter_words)} global_filters={len(global_filters)}"
+                    )
                 for item in rss_items:
                     title = item.get("title", "")
                     if matches_word_groups(title, word_groups, filter_words, global_filters):
                         filtered_items.append(item)
+                        if rss_verbose and log_sample_size > 0 and len(matched_samples) < log_sample_size:
+                            matched_samples.append(truncate_title(title))
+                    elif rss_verbose and log_sample_size > 0 and len(unmatched_samples) < log_sample_size:
+                        unmatched_samples.append(truncate_title(title))
 
                 original_count = len(rss_items)
                 rss_items = filtered_items
                 print(f"[RSS] 关键词过滤后剩余 {len(rss_items)}/{original_count} 条")
+                if rss_verbose and log_sample_size > 0:
+                    if matched_samples:
+                        print("[RSS][调试] 关键词匹配示例: " + " | ".join(matched_samples))
+                    if unmatched_samples:
+                        print("[RSS][调试] 关键词未匹配示例: " + " | ".join(unmatched_samples))
 
                 if not rss_items:
                     print("[RSS] 关键词过滤后没有匹配内容")

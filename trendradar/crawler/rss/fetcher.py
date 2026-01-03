@@ -46,6 +46,8 @@ class RSSFetcher:
         timezone: str = DEFAULT_TIMEZONE,
         freshness_enabled: bool = True,
         default_max_age_days: int = 3,
+        verbose: bool = False,
+        log_sample_size: int = 5,
     ):
         """
         初始化抓取器
@@ -68,9 +70,25 @@ class RSSFetcher:
         self.timezone = timezone
         self.freshness_enabled = freshness_enabled
         self.default_max_age_days = default_max_age_days
+        self.verbose = bool(verbose)
+        try:
+            log_sample_size = int(log_sample_size)
+        except (ValueError, TypeError):
+            log_sample_size = 0
+        self.log_sample_size = max(log_sample_size, 0)
 
         self.parser = RSSParser()
         self.session = self._create_session()
+
+    def _log_debug(self, message: str) -> None:
+        if self.verbose:
+            print(message)
+
+    def _truncate_text(self, value: str, max_len: int = 120) -> str:
+        text = str(value or "")
+        if len(text) <= max_len:
+            return text
+        return text[: max_len - 3] + "..."
 
     def _create_session(self) -> requests.Session:
         """创建请求会话"""
@@ -183,7 +201,18 @@ class RSSFetcher:
             "X-Subscription-Token": api_key,
         })
 
+        if self.verbose:
+            params_debug = dict(params)
+            if "q" in params_debug:
+                params_debug["q"] = self._truncate_text(params_debug["q"])
+            self._log_debug(
+                f"[RSS][调试] Brave 请求 {feed.id}: url={self._truncate_text(feed.url)} params={params_debug}"
+            )
+
         response = self.session.get(feed.url, params=params, headers=headers, timeout=self.timeout)
+        self._log_debug(
+            f"[RSS][调试] Brave 响应 {feed.id}: status={response.status_code} url={self._truncate_text(response.url)}"
+        )
         response.raise_for_status()
 
         data = response.json()
@@ -193,27 +222,38 @@ class RSSFetcher:
             return [], error
 
         results = data.get("results")
-        if not results:
-            if isinstance(data.get("web"), dict):
-                results = data.get("web", {}).get("results")
-            if not results and isinstance(data.get("news"), dict):
-                results = data.get("news", {}).get("results")
+        results_source = "results"
+        if not results and isinstance(data.get("web"), dict):
+            results = data.get("web", {}).get("results")
+            results_source = "web.results"
+        if not results and isinstance(data.get("news"), dict):
+            results = data.get("news", {}).get("results")
+            results_source = "news.results"
         if not isinstance(results, list):
             results = []
+        self._log_debug(
+            f"[RSS][调试] Brave 解析 {feed.id}: results_source={results_source} total={len(results)}"
+        )
 
         now = get_configured_time(self.timezone)
         crawl_time = now.strftime("%H:%M")
         items = []
+        skipped_invalid = 0
+        skipped_empty_title = 0
+        skipped_empty_url = 0
 
         for result in results:
             if not isinstance(result, dict):
+                skipped_invalid += 1
                 continue
             title = result.get("title") or result.get("name") or ""
             title = title.strip()
             if not title:
+                skipped_empty_title += 1
                 continue
             url = result.get("url") or result.get("link") or ""
             if not url:
+                skipped_empty_url += 1
                 continue
             summary = result.get("description") or result.get("snippet") or ""
             published_at = self._normalize_published_at(
@@ -247,6 +287,17 @@ class RSSFetcher:
         if feed.max_items > 0:
             items = items[:feed.max_items]
 
+        if self.verbose:
+            self._log_debug(
+                f"[RSS][调试] Brave 过滤 {feed.id}: 有效 {len(items)} 条, 缺标题 {skipped_empty_title} 条, 缺链接 {skipped_empty_url} 条, 非字典 {skipped_invalid} 条"
+            )
+            if self.log_sample_size > 0 and items:
+                samples = [
+                    self._truncate_text(item.title, 80)
+                    for item in items[: self.log_sample_size]
+                ]
+                self._log_debug(f"[RSS][调试] Brave 示例 {feed.id}: " + " | ".join(samples))
+
         print(f"[RSS] {feed.name}: 获取 {len(items)} 条")
         return items, None
 
@@ -269,14 +320,22 @@ class RSSFetcher:
                 print(f"[RSS] {feed.name}: {error}")
                 return [], error
 
+            self._log_debug(
+                f"[RSS][调试] 抓取 RSS {feed.id}: url={self._truncate_text(feed.url)} max_items={feed.max_items} max_age_days={feed.max_age_days}"
+            )
             response = self.session.get(feed.url, timeout=self.timeout)
+            self._log_debug(
+                f"[RSS][调试] RSS 响应 {feed.id}: status={response.status_code} url={self._truncate_text(response.url)} size={len(response.text)}"
+            )
             response.raise_for_status()
 
             parsed_items = self.parser.parse(response.text, feed.url)
+            self._log_debug(f"[RSS][调试] RSS 解析 {feed.id}: parsed={len(parsed_items)}")
 
             # 限制条目数量（0=不限制）
             if feed.max_items > 0:
                 parsed_items = parsed_items[:feed.max_items]
+            self._log_debug(f"[RSS][调试] RSS 条目 {feed.id}: after_limit={len(parsed_items)}")
 
             # 转换为 RSSItem（使用配置的时区）
             now = get_configured_time(self.timezone)
@@ -298,6 +357,15 @@ class RSSFetcher:
                     count=1,
                 )
                 items.append(item)
+
+            if self.verbose:
+                self._log_debug(f"[RSS][调试] RSS 转换 {feed.id}: items={len(items)}")
+                if self.log_sample_size > 0 and items:
+                    samples = [
+                        self._truncate_text(item.title, 80)
+                        for item in items[: self.log_sample_size]
+                    ]
+                    self._log_debug(f"[RSS][调试] RSS 示例 {feed.id}: " + " | ".join(samples))
 
             # 注意：新鲜度过滤已移至推送阶段（_convert_rss_items_to_list）
             # 这样所有文章都会存入数据库，但旧文章不会推送
@@ -341,6 +409,14 @@ class RSSFetcher:
         crawl_date = now.strftime("%Y-%m-%d")
 
         print(f"[RSS] 开始抓取 {len(self.feeds)} 个 RSS 源...")
+        self._log_debug(
+            f"[RSS][调试] RSS 配置: interval={self.request_interval}ms timeout={self.timeout}s use_proxy={self.use_proxy} freshness_enabled={self.freshness_enabled} default_max_age_days={self.default_max_age_days}"
+        )
+        if self.verbose:
+            feed_summary = ", ".join(
+                f"{feed.id}({feed.feed_type or 'rss'})" for feed in self.feeds
+            )
+            self._log_debug(f"[RSS][调试] RSS 源列表: {feed_summary}")
 
         for i, feed in enumerate(self.feeds):
             # 请求间隔（带随机波动）
@@ -349,14 +425,19 @@ class RSSFetcher:
                 jitter = random.uniform(-0.2, 0.2) * interval
                 time.sleep(interval + jitter)
 
+            self._log_debug(
+                f"[RSS][调试] 抓取进度 {i + 1}/{len(self.feeds)}: {feed.id} ({feed.feed_type or 'rss'})"
+            )
             items, error = self.fetch_feed(feed)
 
             id_to_name[feed.id] = feed.name
 
             if error:
                 failed_ids.append(feed.id)
+                self._log_debug(f"[RSS][调试] 抓取失败 {feed.id}: {error}")
             else:
                 all_items[feed.id] = items
+                self._log_debug(f"[RSS][调试] 抓取成功 {feed.id}: {len(items)} 条")
 
         total_items = sum(len(items) for items in all_items.values())
         print(f"[RSS] 抓取完成: {len(all_items)} 个源成功, {len(failed_ids)} 个失败, 共 {total_items} 条")
@@ -395,6 +476,8 @@ class RSSFetcher:
         freshness_config = config.get("freshness_filter", {})
         freshness_enabled = freshness_config.get("enabled", True)  # 默认启用
         default_max_age_days = freshness_config.get("max_age_days", 3)  # 默认3天
+        verbose = config.get("VERBOSE_LOG", config.get("verbose_log", False))
+        log_sample_size = config.get("LOG_SAMPLE_SIZE", config.get("log_sample_size", 5))
 
         feeds = []
         for feed_config in config.get("feeds", []):
@@ -436,4 +519,6 @@ class RSSFetcher:
             timezone=config.get("timezone", DEFAULT_TIMEZONE),
             freshness_enabled=freshness_enabled,
             default_max_age_days=default_max_age_days,
+            verbose=verbose,
+            log_sample_size=log_sample_size,
         )

@@ -155,6 +155,16 @@ def _load_rss_config(config_data: Dict) -> Dict:
         max_age_days = 3
 
     # RSS 配置直接从 config.yaml 读取，不再支持环境变量
+    raw_log_sample_size = advanced_rss.get("log_sample_size", 5)
+    try:
+        log_sample_size = int(raw_log_sample_size)
+        if log_sample_size < 0:
+            print(f"[警告] RSS log_sample_size 为负数 ({log_sample_size})，使用默认值 5")
+            log_sample_size = 5
+    except (ValueError, TypeError):
+        print(f"[警告] RSS log_sample_size 格式错误 ({raw_log_sample_size})，使用默认值 5")
+        log_sample_size = 5
+
     return {
         "ENABLED": rss.get("enabled", False),
         "REQUEST_INTERVAL": advanced_rss.get("request_interval", 2000),
@@ -162,6 +172,8 @@ def _load_rss_config(config_data: Dict) -> Dict:
         "USE_PROXY": advanced_rss.get("use_proxy", False),
         "PROXY_URL": rss_proxy_url,
         "FEEDS": rss.get("feeds", []),
+        "VERBOSE_LOG": advanced_rss.get("verbose_log", False),
+        "LOG_SAMPLE_SIZE": log_sample_size,
         "FRESHNESS_FILTER": {
             "ENABLED": freshness_filter.get("enabled", True),  # 默认启用
             "MAX_AGE_DAYS": max_age_days,
