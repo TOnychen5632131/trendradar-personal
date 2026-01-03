@@ -64,7 +64,7 @@ def render_html_content(
             }
 
             .header {
-                background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+                background: #171717;
                 color: white;
                 padding: 32px 24px;
                 text-align: center;
@@ -177,8 +177,8 @@ def render_html_content(
                 font-weight: 500;
             }
 
-            .word-count.hot { color: #dc2626; font-weight: 600; }
-            .word-count.warm { color: #ea580c; font-weight: 600; }
+            .word-count.hot { color: #171717; font-weight: 600; }
+            .word-count.warm { color: #404040; font-weight: 600; }
 
             .word-index {
                 color: #999;
@@ -266,8 +266,8 @@ def render_html_content(
                 text-align: center;
             }
 
-            .rank-num.top { background: #dc2626; }
-            .rank-num.high { background: #ea580c; }
+            .rank-num.top { background: #171717; }
+            .rank-num.high { background: #404040; }
 
             .time-info {
                 color: #999;
@@ -275,7 +275,7 @@ def render_html_content(
             }
 
             .count-info {
-                color: #059669;
+                color: #171717;
                 font-size: 11px;
                 font-weight: 500;
             }
@@ -288,8 +288,8 @@ def render_html_content(
             }
 
             .news-link {
-                color: #2563eb;
-                text-decoration: none;
+                color: #171717;
+                text-decoration: underline;
             }
 
             .news-link:hover {
@@ -297,7 +297,7 @@ def render_html_content(
             }
 
             .news-link:visited {
-                color: #7c3aed;
+                color: #525252;
             }
 
             .new-section {
@@ -366,8 +366,8 @@ def render_html_content(
                 flex-shrink: 0;
             }
 
-            .new-item-rank.top { background: #dc2626; }
-            .new-item-rank.high { background: #ea580c; }
+            .new-item-rank.top { background: #171717; }
+            .new-item-rank.high { background: #404040; }
 
             .new-item-content {
                 flex: 1;
@@ -424,14 +424,14 @@ def render_html_content(
             }
 
             .footer-link {
-                color: #4f46e5;
+                color: #171717;
                 text-decoration: none;
                 font-weight: 500;
                 transition: color 0.2s ease;
             }
 
             .footer-link:hover {
-                color: #7c3aed;
+                color: #404040;
                 text-decoration: underline;
             }
 

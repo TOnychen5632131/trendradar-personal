@@ -65,7 +65,7 @@ def render_rss_html_content(
             }
 
             .header {
-                background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+                background: #171717;
                 color: white;
                 padding: 32px 24px;
                 text-align: center;
@@ -157,13 +157,13 @@ def render_rss_html_content(
                 justify-content: space-between;
                 margin-bottom: 16px;
                 padding-bottom: 8px;
-                border-bottom: 2px solid #10b981;
+                border-bottom: 2px solid #171717;
             }
 
             .feed-name {
                 font-size: 16px;
                 font-weight: 600;
-                color: #059669;
+                color: #171717;
             }
 
             .feed-count {
@@ -177,7 +177,7 @@ def render_rss_html_content(
                 padding: 16px;
                 background: #f9fafb;
                 border-radius: 8px;
-                border-left: 3px solid #10b981;
+                border-left: 3px solid #171717;
             }
 
             .rss-item:last-child {
@@ -198,7 +198,7 @@ def render_rss_html_content(
             }
 
             .rss-author {
-                color: #059669;
+                color: #525252;
                 font-size: 12px;
                 font-weight: 500;
             }
@@ -212,8 +212,8 @@ def render_rss_html_content(
             }
 
             .rss-link {
-                color: #2563eb;
-                text-decoration: none;
+                color: #171717;
+                text-decoration: underline;
             }
 
             .rss-link:hover {
@@ -221,7 +221,7 @@ def render_rss_html_content(
             }
 
             .rss-link:visited {
-                color: #7c3aed;
+                color: #525252;
             }
 
             .rss-summary {
@@ -250,14 +250,14 @@ def render_rss_html_content(
             }
 
             .footer-link {
-                color: #059669;
+                color: #171717;
                 text-decoration: none;
                 font-weight: 500;
                 transition: color 0.2s ease;
             }
 
             .footer-link:hover {
-                color: #10b981;
+                color: #404040;
                 text-decoration: underline;
             }
 
